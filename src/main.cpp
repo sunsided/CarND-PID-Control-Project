@@ -53,9 +53,9 @@ int main() {
     std::array<double, 3> pid_params{0.1, 0, 0.1};
     std::array<double, 3> pid_param_steps{0.1, 0.05, 0.1};
 #else
-    auto pid_initial_error = 0.00065763522988505744;
-    std::array<double, 3> pid_params{0.16488822303194187, 0.00084892438216040763, 0.75821803587935999};
-    std::array<double, 3> pid_param_steps{0.0087840682886482432, 4.5732510180438355e-06, 0.064820826549344984};
+    auto pid_initial_error = 8.3450681818181784e-05;
+    std::array<double, 3> pid_params{0.16488822303194195, 0.00084892438216043462, 0.75542321715073213};
+    std::array<double, 3> pid_param_steps{1.7984689635948094e-39, 1.4959913862067697e-42, 1.9937038494087163e-37};
 #endif
     const auto twiddle_lambda = 0.2;
     const auto twiddle_delay = 5;
