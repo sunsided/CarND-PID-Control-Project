@@ -1,5 +1,14 @@
-# CarND-Controls-PID
-Self-Driving Car Engineer Nanodegree Program
+# CarND PID Controller
+
+[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+
+The goal of this project is to implement a PID controller that keeps the autonomous car
+close to the center of the lane within a simulated environment.
+
+A video of the final implementation running in a simulator can be 
+found [here](https://www.youtube.com/watch?v=wSUsaHKEUBE). 
+
+<a href="https://www.youtube.com/watch?v=wSUsaHKEUBE"><img src="images/video.jpg" /></a>
 
 ---
 
@@ -37,62 +46,72 @@ Fellow students have put together a guide to Windows set-up for the project [her
 
 Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
 
-## Editor Settings
+## Project summary
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+This project only implements a single PID controller for the cross-track error, i.e. the
+difference between the car's actual and expected trajectory, the center of the lane.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+The PID controller consists of three supporting and/or adversarial components that work together
+to reduce the observed error:
 
-## Code Style
+- The **proprotional** (**P**) component yields a control output that is proportional to the error;
+  the higher the error, the higher the control output will be. 
+  It only observes the current state of the system and only reacts to the current situation, always.
+  Increasing the coefficient `Kp` of this component would result in faster reduction of error, but risks
+  overshooting and constant oscillation; if the coefficient is too high, the system will become unstable
+  up to a point where recovery is impossible.
+- The **integral** (**I**) component integrates all previous errors and thus takes into account past states
+  of the system. 
+  If the system to be controlled has a systemic error, such as car on a circular road,
+  where each new coordinate would be off by from the current coordinate by a fix amount,
+  the proportional component would be always off by at least the same amount.
+  By integrating the errors, the **I** controller is able to counter the systemic error of the
+  **P** controller. Since it builds up a running error and needs a negative error to reduce the
+  tally, it tends to overshoot the target state. This effect can be steered by its appropriate
+  coefficient, `Ki`.
+- The **differential** (**D**) component observes the derivative of the current error and
+  is thus able to predict the (immediate) future state of the system.
+  Where **P** controller oscillates due to inertia of the system, the **D** controller is
+  able to notice that a change in error now may result in overshooting; by subtracting the
+  differential from the current control value, it allows to smoothly approach the target value.
+  Its coefficient `Kd` allows to steer between under- and overdampening (i.e. slow approaching
+  or fast attack with dampened oscillation) or critically dampening the system (i.e. 
+  dampening "just right" to minimize overshoot).
+  
+In order to find the optimal coefficients `Kp`, `Ki` and `Kd`, a combination of systematic
+"guesstimation" and applying a stochastic variant of a coordinate ascent algorithm ("Twiddle")
+was applied. The rule of thumb for initializing the parameters was to:
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+- Let the car drive along the track,
+- Increase the proportional `Kp` such that stable oscillation around the center of the track occurred,
+- Increase the differential `Kd` such that oscillation died out,
+- Increase the integrating `Ki` such that systemic biases were reduced.
 
-## Project Instructions and Rubric
+When oscillation was too strong, `Kd` was reduced by a factor of 66%; after that, the process was
+repeated.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+With the parameters found in this way, the "Twiddle" algorithm was initialized in order to
+fine-tune onto a better set of values. It was implemented as a finite state machine in `Twiddle.h`/`.cpp`
+that collects error data for a given time period, tunes a value according to a stochastic search interval,
+commits the change if it yielded a smaller control error or reverts it, then selects a new parameter
+and starts over.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+The values found this way were
 
-## Hints!
+- `Kp = 0.011849068327946135 ± 0.0019829846121568401`
+- `Ki = 4.3864069971145935e-05 ± 3.4970847752324867e-08`
+- `Kd = 0.15786445727670606 ± 0.0023786438737016182`
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+These values result in a controller that keeps the car well on the track,
+but reacts heavily to disturbances. This would not be suitable for a nice driving experience,
+but then again, the whole controller is a bit too simple for an actual self-driving car.
 
-## Call for IDE Profiles Pull Requests
+I was hoping to bias the controller towards a slower attack (i.e., proportional coefficient)
+as I assume it is much less of a problem if the car arrives at the lane center slower rather
+than faster. This is especially true in curves where "sharp" steering commands would yield
+a high lateral acceleration and jerk.
+As mentioned already, a more complex solution that would take into account multiple sensors,
+such as a MISO, state-space or neural controller would be beneficial for an actual car.
 
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
+The project was fun though and seeing the controller's output on a simulated race track
+rather than a graph was a nice experience.
