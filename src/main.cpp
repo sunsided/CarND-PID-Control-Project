@@ -53,15 +53,12 @@ int main() {
     std::array<double, 3> pid_params{0.1, 0, 0.1};
     std::array<double, 3> pid_param_steps{0.1, 0.05, 0.1};
 #else
-    //auto pid_initial_error = 0.00501264;
-    //std::array<double, 3> pid_params{0.516119, -0.0007209, 0.5199};
-    //std::array<double, 3> pid_param_steps{0.001, 0.001, 0.001};
-    auto pid_initial_error = 0.012450877338403043;
-    std::array<double, 3> pid_params{0.1000059244691, 0.0027888569236750003, 0.49999690730280016};
-    std::array<double, 3> pid_param_steps{7.5530899999999998e-08, 3.7765500000000002e-09, 9.2697199999999997e-08};
+    auto pid_initial_error = 0.00065763522988505744;
+    std::array<double, 3> pid_params{0.16488822303194187, 0.00084892438216040763, 0.75821803587935999};
+    std::array<double, 3> pid_param_steps{0.0087840682886482432, 4.5732510180438355e-06, 0.064820826549344984};
 #endif
     const auto twiddle_lambda = 0.2;
-    const auto twiddle_delay = 15;
+    const auto twiddle_delay = 5;
     const auto car_throttle = 0.3;
 
     std::cout.precision(17);
