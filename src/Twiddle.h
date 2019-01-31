@@ -3,6 +3,7 @@
 
 #include <array>
 #include <chrono>
+#include <random>
 
 class PID;
 
@@ -45,6 +46,10 @@ private:
     const double _delay_secs;
     bool _need_update;
     std::chrono::high_resolution_clock::time_point _last_update;
+    std::default_random_engine _generator;
+    std::uniform_int_distribution<int> _index_distribution;
+    std::normal_distribution<double> _param_distribution;
+    double _scale;
 };
 
 #endif //PID_TWIDDLE_H

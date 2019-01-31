@@ -12,7 +12,7 @@ Twiddle::Twiddle(PID& pid, const std::array<double, 3>& initial, const std::arra
     _p{initial}, _dp{initial_steps},
     _best_error{pid_initial_error},
     _i{0}, _state{TwiddleState::Initialize},
-    _delay_secs{delay_secs}, _need_update{true}
+    _delay_secs{delay_secs}, _need_update{true}, _scale{1.0}
 {
     assert(lambda > 0);
     assert(lambda <= 0.5);
@@ -21,19 +21,16 @@ Twiddle::Twiddle(PID& pid, const std::array<double, 3>& initial, const std::arra
     _last_update = std::chrono::high_resolution_clock::now();
 
     const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> distribution(0, _dp.size() - 1);
+    _generator = std::default_random_engine{seed};
+    _index_distribution = std::uniform_int_distribution<int>{0, static_cast<int>(_dp.size() - 1)};
+    _param_distribution = std::normal_distribution<double>{1, 0.1};
 
-    _i = static_cast<size_t>(distribution(generator));
-    //if (!std::isnan(_best_error)) {
-    //    _state = TwiddleState::FiddleUp;
-    //}
+    _i = static_cast<size_t>(_index_distribution(_generator));
 }
 
 void Twiddle::next_param() {
-    if (++_i >= _dp.size()) {
-        _i = 0;
-    }
+    const auto old_index = _i;
+    while (old_index == (_i = static_cast<size_t>(_index_distribution(_generator)))) ;
     _state = TwiddleState::FiddleUp;
     _need_update = true;
 }
@@ -80,6 +77,7 @@ void Twiddle::update() {
         }
 
         case TwiddleState::FiddleUp: {
+            _scale = _param_distribution(_generator);
             _p[_i] += _dp[_i];
             std::cout << "Increasing param #" << _i << " to " << _p[_i] << "." << std::endl;
             _state = TwiddleState::MeasureFiddleUp;
@@ -93,11 +91,12 @@ void Twiddle::update() {
 
                 update_controller(true);
                 // At this point, we succeeded and may extend the search area more.
-                _dp[_i] *= (1.0 + _lambda);
+                _dp[_i] *= (1.0 + _lambda * _scale);
                 next_param();
                 break;
             }
 
+            std::cout << "Increasing failed for param #" << _i << ", error at " << total_error << "." << std::endl;
             _state = TwiddleState::FiddleDown;
             _need_update = true;
             break;
@@ -118,22 +117,23 @@ void Twiddle::update() {
 
                 update_controller(true);
                 // At this point, we succeeded and may extend the search area more.
-                _dp[_i] *= (1.0 + _lambda);
+                _dp[_i] *= (1.0 + _lambda * _scale);
                 next_param();
                 break;
             }
 
+            std::cout << "Decreasing failed for param #" << _i << ", error at " << total_error << "." << std::endl;
             _state = TwiddleState::MoveOn;
             _need_update = true;
             break;
         }
 
         case TwiddleState::MoveOn: {
-            std::cout << "Nothing worked for param #" << _i << ", error still at " << total_error << "; resetting to " << _p[_i] << "." << std::endl;
             _p[_i] += _dp[_i];
+            std::cout << "Nothing worked for param #" << _i << ", error still at " << total_error << "; resetting to " << _p[_i] << "." << std::endl;
             update_controller(false);
             // At this point, nothing helped; undo the subtracted value and refine the search area.
-            _dp[_i] *= (1.0 - _lambda);
+            _dp[_i] *= (1.0 - _lambda * _scale);
 
             next_param();
             break;

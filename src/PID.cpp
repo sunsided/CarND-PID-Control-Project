@@ -12,6 +12,9 @@ void PID::Init(const double Kp_, const double Ki_, const double Kd_) noexcept {
     Kp = Kp_;
     Ki = Ki_;
     Kd = Kd_;
+    p_error = 0;
+    i_error = 0;
+    d_error = 0;
     ResetError();
 }
 
@@ -25,9 +28,9 @@ void PID::UpdateError(const double cte) {
 }
 
 void PID::ResetError() {
-    p_error = 0;
-    i_error = 0;
-    d_error = 0;
+    //p_error = 0;
+    //i_error = 0;
+    //d_error = 0;
     total_error = 0.0;
     count = 0.0;
 };
