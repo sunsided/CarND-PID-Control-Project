@@ -68,7 +68,7 @@ void Twiddle::update() {
     const auto total_error = pid.TotalError();
     switch(_state) {
         case TwiddleState::Initialize: {
-            std::cout << "Fiddle initializing." << std::endl;
+            std::cout << "Stochastic Twiddle warming up ..." << std::endl;
             if (std::isnan(_best_error) || total_error < _best_error) {
                 _best_error = total_error;
             }

@@ -1,3 +1,11 @@
+// TODO: Could be pulled to CMakeLists.txt
+#define ENABLE_TWIDDLE false
+
+// Enable the twiddle code if requested
+#if (defined(ENABLE_TWIDDLE)) && ENABLE_TWIDDLE
+#define USE_TWIDDLE true
+#endif
+
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -53,9 +61,9 @@ int main() {
     std::array<double, 3> pid_params{0.1, 0, 0.1};
     std::array<double, 3> pid_param_steps{0.1, 0.05, 0.1};
 #else
-    auto pid_initial_error = 0.18124859992258072;
-    std::array<double, 3> pid_params{0.0021888223031941924, 4.3856978603522308e-05, 0.15927229208067203};
-    std::array<double, 3> pid_param_steps{9.2638967530054396e-05, 1.8294392817564819e-07, 0.0065321075942787387};
+    auto pid_initial_error = 0.032695345190355329;
+    std::array<double, 3> pid_params{0.011849068327946135, 4.3864069971145935e-05, 0.15786445727670606};
+    std::array<double, 3> pid_param_steps{0.0019829846121568401, 3.4970847752324867e-08, 0.0023786438737016182};
 #endif
     const auto twiddle_lambda = 0.2;
     const auto twiddle_delay = 45;
@@ -66,7 +74,11 @@ int main() {
     PID pid;
     Twiddle twiddle{pid, pid_params, pid_param_steps, twiddle_lambda, twiddle_delay, pid_initial_error};
 
-    h.onMessage([&pid, &twiddle, &car_throttle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+    h.onMessage([&pid,
+#if USE_TWIDDLE
+                 &twiddle,
+#endif
+                 &car_throttle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                        uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
@@ -91,7 +103,9 @@ int main() {
             [[maybe_unused]] const auto normalized_angle = normalize_angle(angle);
 
             pid.UpdateError(cte);
+#if USE_TWIDDLE
             twiddle.update();
+#endif
 
             const double raw_steer_value = pid.Calculate();
             const double steer_value = std::max(-1.0, std::min(1.0, raw_steer_value));
