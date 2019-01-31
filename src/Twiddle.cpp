@@ -25,9 +25,9 @@ Twiddle::Twiddle(PID& pid, const std::array<double, 3>& initial, const std::arra
     std::uniform_int_distribution<int> distribution(0, _dp.size() - 1);
 
     _i = static_cast<size_t>(distribution(generator));
-    if (!std::isnan(_best_error)) {
-        _state = TwiddleState::FiddleUp;
-    }
+    //if (!std::isnan(_best_error)) {
+    //    _state = TwiddleState::FiddleUp;
+    //}
 }
 
 void Twiddle::next_param() {
@@ -71,10 +71,11 @@ void Twiddle::update() {
     const auto total_error = pid.TotalError();
     switch(_state) {
         case TwiddleState::Initialize: {
-            std::cout << "Fiddle initialized." << std::endl;
-            _best_error = total_error;
+            std::cout << "Fiddle initializing." << std::endl;
+            if (std::isnan(_best_error) || total_error < _best_error) {
+                _best_error = total_error;
+            }
             _state = TwiddleState::FiddleUp;
-            _need_update = true;
             break;
         }
 
