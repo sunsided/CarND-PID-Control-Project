@@ -53,12 +53,12 @@ int main() {
     std::array<double, 3> pid_params{0.1, 0, 0.1};
     std::array<double, 3> pid_param_steps{0.1, 0.05, 0.1};
 #else
-    auto pid_initial_error = 8.3450681818181784e-05;
-    std::array<double, 3> pid_params{0.16488822303194195, 0.00084892438216043462, 0.75542321715073213};
-    std::array<double, 3> pid_param_steps{1.7984689635948094e-39, 1.4959913862067697e-42, 1.9937038494087163e-37};
+    auto pid_initial_error = std::numeric_limits<double>::quiet_NaN();
+    std::array<double, 3> pid_params{0.002288822303194195, 0.0000254892438216043462, 0.174542321715073213};
+    std::array<double, 3> pid_param_steps{1.7984689635948094e-3, 1.4959913862067697e-5, 1.9937038494087163e-2};
 #endif
     const auto twiddle_lambda = 0.2;
-    const auto twiddle_delay = 5;
+    const auto twiddle_delay = 45;
     const auto car_throttle = 0.3;
 
     std::cout.precision(17);
@@ -86,12 +86,12 @@ int main() {
 
             // j[1] is the data JSON object
             const auto cte = std::stod(j[1]["cte"].get<string>());
-            const auto speed = std::stod(j[1]["speed"].get<string>());
+            [[maybe_unused]] const auto speed = std::stod(j[1]["speed"].get<string>());
             const auto angle = std::stod(j[1]["steering_angle"].get<string>());
-            const auto normalized_angle = normalize_angle(angle);
+            [[maybe_unused]] const auto normalized_angle = normalize_angle(angle);
 
             pid.UpdateError(cte);
-            twiddle.update();
+            //twiddle.update();
 
             const double raw_steer_value = pid.Calculate();
             const double steer_value = std::max(-1.0, std::min(1.0, raw_steer_value));
@@ -108,8 +108,9 @@ int main() {
         }  // end websocket message if
     }); // end h.onMessage
 
-    h.onConnection([](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
+    h.onConnection([&pid](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
         std::cout << "Connected!!!" << std::endl;
+        pid.ResetError();
     });
 
     h.onDisconnection([](uWS::WebSocket<uWS::SERVER> ws, int code,
