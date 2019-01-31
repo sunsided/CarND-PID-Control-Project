@@ -53,9 +53,9 @@ int main() {
     std::array<double, 3> pid_params{0.1, 0, 0.1};
     std::array<double, 3> pid_param_steps{0.1, 0.05, 0.1};
 #else
-    auto pid_initial_error = std::numeric_limits<double>::quiet_NaN();
-    std::array<double, 3> pid_params{0.002288822303194195, 0.0000254892438216043462, 0.174542321715073213};
-    std::array<double, 3> pid_param_steps{1.7984689635948094e-3, 1.4959913862067697e-5, 1.9937038494087163e-2};
+    auto pid_initial_error = 0.18124859992258072;
+    std::array<double, 3> pid_params{0.0021888223031941924, 4.3856978603522308e-05, 0.15927229208067203};
+    std::array<double, 3> pid_param_steps{9.2638967530054396e-05, 1.8294392817564819e-07, 0.0065321075942787387};
 #endif
     const auto twiddle_lambda = 0.2;
     const auto twiddle_delay = 45;
@@ -91,7 +91,7 @@ int main() {
             [[maybe_unused]] const auto normalized_angle = normalize_angle(angle);
 
             pid.UpdateError(cte);
-            //twiddle.update();
+            twiddle.update();
 
             const double raw_steer_value = pid.Calculate();
             const double steer_value = std::max(-1.0, std::min(1.0, raw_steer_value));
