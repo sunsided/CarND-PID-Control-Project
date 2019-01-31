@@ -110,8 +110,9 @@ I was hoping to bias the controller towards a slower attack (i.e., proportional 
 as I assume it is much less of a problem if the car arrives at the lane center slower rather
 than faster. This is especially true in curves where "sharp" steering commands would yield
 a high lateral acceleration and jerk.
-As mentioned already, a more complex solution that would take into account multiple sensors,
-such as a MISO, state-space or model predictive and neural controllers would be beneficial for an actual car.
+As mentioned already, a more complex solution that would take into account multiple sensors -
+such as a MISO, state-space, model predictive or neural controller - 
+would be beneficial for an actual car.
 
 The project was fun though and seeing the controller's output on a simulated race track
 rather than a graph was a nice experience.
